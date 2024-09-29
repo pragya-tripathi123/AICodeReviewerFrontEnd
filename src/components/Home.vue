@@ -1,88 +1,130 @@
 <template>
-    <div class="">
+    <v-container fluid class="pa-0">
         <div class="header">
-           <h1> Ai Code Reviewer </h1>
+           <h2> AI Code Reviewer </h2>
         </div>
-        <div class="top">
-            <v-select
-            v-model="name"
-            :items="repoName"
-            label= "Outlined style"
-            ></v-select>
-            <v-select
-            v-model="id"
-            :items="commitId"
-            label="Outlined style"
-            ></v-select>
-            <button class="btn">
-                review
-            </button>
-        </div>
-        <div class="bottom">
-            <h2>Code :</h2>
-            <div class="code">
+  
+      <v-container class="mt-5">
+        <v-row justify="center">
+          <v-col cols="12" md="8">
+            <v-card class="pa-5">
+              <v-select
+                v-model="name"
+                :items="repoName"
+                label="Select Your Repository"
+                outlined
+                dense
+                class="mb-4"
+              ></v-select>
+              <v-select
+                v-model="id"
+                :items="commitId"
+                label="Select Commit ID"
+                outlined
+                dense
+                class="mb-4"
+              ></v-select>
+              <v-btn
+                class="ma-3"
+                color="success"
+                @click="callCodeReviewer"
+                :disabled="!name || !id"
+              >
+                Get Review of Your Code
+              </v-btn>
+            </v-card>
+          </v-col>
+        </v-row>
+  
+        <v-row justify="center" v-if="code || review" class="mt-5">
+            <v-col cols="12">
+          <v-divider class="my-10 f"></v-divider>
+        </v-col>
+          <v-col cols="12" md="10">
+            <!-- Code Section -->
 
-                            Why do we use it?
-            It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the 
-            Where can I get some?
-            There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.
-
-            5
-                paragraphs
-                words
-                bytes
-                lists
-                Start with 'Lorem
-            ipsum dolor sit amet...'
-
-            </div>
-            <h2>Review of Your Code:</h2>
-            <div class="review">
-
-            </div>
-        </div>
-    </div>
-</template>
-
-<script>
-export default{
-    name : 'HomeView',
+            <v-card class="pa-3 mb-4">
+              <v-card-title>Code:</v-card-title>
+              <v-divider></v-divider>
+              <v-card-text>
+                <pre class="code-box">{{ code }}</pre>
+              </v-card-text>
+            </v-card>
+  
+            <!-- Review Section -->
+            <v-card class="pa-3">
+              <v-card-title>Review of Your Code:</v-card-title>
+              <v-divider></v-divider>
+              <v-card-text>
+                <pre class="review-box">{{ review }}</pre>
+              </v-card-text>
+            </v-card>
+          </v-col>
+        </v-row>
+      </v-container>
+    </v-container>
+  </template>
+  
+  <script>
+  import axios from 'axios';
+  
+  export default {
+    name: 'HomeView',
     data: () => ({
-      name : '',
-      id : '',
+      name: '',
+      id: '',
       repoName: ['Foo', 'Bar', 'Fizz', 'Buzz'],
       commitId: ['Foo', 'Bar', 'Fizz', 'Buzz'],
+      code: '',
+      review: ''
     }),
-}
-</script>
-
-<style>
-.header{
-    font-size: 20px;
+    mounted() {
+      this.fetchRepoData();
+    },
+    methods: {
+      async fetchRepoData() {
+        try {
+          const response = await axios.get('API_ENDPOINT');
+          this.repoName = response.data.repoNames;
+          this.commitId = response.data.commitIds;
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      },
+  
+      async callCodeReviewer() {
+        try {
+          const response = await axios.get('API_ENDPOINT'); 
+          this.code = response.data.code;
+          this.review = response.data.review;
+        } catch (error) {
+          console.error('Error fetching data:', error);
+        }
+      }
+    }
+  };
+  </script>
+  
+  <style scoped>
+  .v-application--wrap {
+    min-height: 100vh;
+    background: #f5f5f5;
+  }
+  .header {
+    font-size: 24px;
     font-weight: bold;
-    background-color: rgb(7, 153, 55);
+    background-color: rgb(24, 173, 76);
     padding: 1rem;
     text-align: center;
-}
-.top{
-    padding: 5rem;
-    display: flex;
-    gap:5rem;
-    align-items: center;
-}
-.btn{
-    background-color: rgb(7, 153, 55);
-    /* margin: 0.5rem 0rem; */
-    padding: 0.5rem 1rem;
-    border: 1 px solid black;
-    color: rgb(23, 23, 69);
-}
-.bottom{
-    padding: 5rem;
-}
-.code, .review{
-    border: 1px solid black;
-    margin-bottom: 5rem;
-    padding: 0.5rem;
-}
-</style>
+    color: rgb(224, 224, 227);
+  }
+  .code-box,
+  .review-box {
+    background-color: #f4f4f4;
+    border-radius: 5px;
+    padding: 1rem;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Courier New', Courier, monospace;
+  }
+  </style>
