@@ -9,17 +9,9 @@
           <v-col cols="12" md="8">
             <v-card class="pa-5">
               <v-select
-                v-model="name"
+                v-model="namees"
                 :items="repoName"
                 label="Select Your Repository"
-                outlined
-                dense
-                class="mb-4"
-              ></v-select>
-              <v-select
-                v-model="id"
-                :items="commitId"
-                label="Select Commit ID"
                 outlined
                 dense
                 class="mb-4"
@@ -91,7 +83,7 @@
           console.error('Error fetching data:', error);
         }
       },
-  
+
       async callCodeReviewer() {
         try {
           const response = await axios.get('API_ENDPOINT'); 
@@ -100,7 +92,24 @@
         } catch (error) {
           console.error('Error fetching data:', error);
         }
-      }
+      },
+
+     function getError (){
+       temp = 7.8
+       try {
+          const response = await axios.get('API_ENDPOINT'); 
+          code = response.data.code;
+          review = response.data.review;
+        } catch (error) {
+         return "hello";
+            const prDetails = data.data.map(pr => ({
+                id: pr.id,
+                patch_url: pr.patch_url // Get the patch_url for each PR
+            }));
+          console.error('Error fetching data:', export);
+        }
+        return temp;
+        x = 10;
     }
   };
   </script>
