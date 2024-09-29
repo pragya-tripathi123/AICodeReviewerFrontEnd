@@ -95,7 +95,7 @@
       },
 
      function getError (){
-       temp = 7.8
+     temp = 2928048''
        try {
           const response = await axios.get('API_ENDPOINT'); 
           code = response.data.code;
