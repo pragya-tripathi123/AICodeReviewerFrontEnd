@@ -1,95 +1,190 @@
 <template>
-    <div class="">
-        <div class="header">
-           <h1> Ai Code Reviewer </h1>
-        </div>
-        <div class="top">
-            <v-select
-            v-model="name"
-            :items="repoName"
-            label= "Outlined style"
-            ></v-select>
-            <v-select
-            v-model="id"
-            :items="commitId"
-            label="Outlined style"
-            ></v-select>
-            <button class="btn">
-                review
-            </button>
-        </div>
-        <div class="bottom">
-            <h2>Code :</h2>
-            <div class="code">
-
-                            Why do we use it?
-            It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters, as opposed to using 'Content here, content here', making it look like readable English. Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. Various versions have evolved over the years, sometimes by accident, sometimes on purpose (injected humour and the like).
-
-
-            Where does it come from?
-            Contrary to popular belief, Lorem Ipsum is not simply random text. It has roots in a piece of classical Latin literature from 45 BC, making it over 2000 years old. Richard McClintock, a Latin professor at Hampden-Sydney College in Virginia, looked up one of the more obscure Latin words, consectetur, from a Lorem Ipsum passage, and going through the cites of the word in classical literature, discovered the undoubtable source. Lorem Ipsum comes from sections 1.10.32 and 1.10.33 of "de Finibus Bonorum et Malorum" (The Extremes of Good and Evil) by Cicero, written in 45 BC. This book is a treatise on the theory of ethics, very popular during the Renaissance. The first line of Lorem Ipsum, "Lorem ipsum dolor sit amet..", comes from a line in section 1.10.32.
-
-            The standard chunk of Lorem Ipsum used since the 1500s is reproduced below for those interested. Sections 1.10.32 and 1.10.33 from "de Finibus Bonorum et Malorum" by Cicero are also reproduced in their exact original form, accompanied by English versions from the 1914 translation by H. Rackham.
-
-            Where can I get some?
-            There are many variations of passages of Lorem Ipsum available, but the majority have suffered alteration in some form, by injected humour, or randomised words which don't look even slightly believable. If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything embarrassing hidden in the middle of text. All the Lorem Ipsum generators on the Internet tend to repeat predefined chunks as necessary, making this the first true generator on the Internet. It uses a dictionary of over 200 Latin words, combined with a handful of model sentence structures, to generate Lorem Ipsum which looks reasonable. The generated Lorem Ipsum is therefore always free from repetition, injected humour, or non-characteristic words etc.
-
-            5
-                paragraphs
-                words
-                bytes
-                lists
-                Start with 'Lorem
-            ipsum dolor sit amet...'
-
-            </div>
-            <h2>Review of Your Code:</h2>
-            <div class="review">
-
-            </div>
-        </div>
+  <v-container fluid class="pa-0">
+    <div class="header">
+      <h2>AI Code Reviewer</h2>
     </div>
+
+    <v-container class="mt-5">
+      <v-row justify="center">
+        <v-col cols="12" md="8">
+          <v-card class="pa-5">
+            <v-select
+              v-model="name"
+              :items="repoName"
+              label="Select Your Repository"
+              outlined
+              dense
+              class="mb-4"
+              @change="updatePrIds"
+            ></v-select>
+            <v-select
+              v-model="id"
+              :items="filteredPrIds"
+              label="Select your PR Id"
+              outlined
+              dense
+              class="mb-4"
+              :disabled="!filteredPrIds.length"
+            ></v-select>
+            <div v-if="!filteredPrIds.length && name" class="no-pr-message">
+              No PRs available for this repository.
+            </div>
+            <v-btn
+              class="ma-3"
+              color="success"
+              @click="callCodeReviewer"
+              :disabled="!name || !id || loading"
+            >
+              Get Review of Your Code
+            </v-btn>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <v-row justify="center" v-if="code || review" class="mt-5">
+        <v-col cols="12">
+          <v-divider class="my-10 f"></v-divider>
+        </v-col>
+        <v-col cols="12" md="10">
+          <!-- Code Section -->
+          <v-card class="pa-3 mb-4">
+            <v-card-title>Code:</v-card-title>
+            <v-divider></v-divider>
+            <v-card-text class="scrollable-card">
+              <pre class="code-box">{{ code }}</pre>
+            </v-card-text>
+          </v-card>
+
+          <!-- Review Section -->
+          <v-card class="pa-3">
+            <v-card-title>Review of Your Code:</v-card-title>
+            <v-divider></v-divider>
+            <v-card-text class="scrollable-card">
+              <pre class="review-box">{{ review }}</pre>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
+      <!-- Loader Overlay -->
+      <v-progress-circular
+        v-if="loading"
+        indeterminate
+        color="primary"
+        class="loading-overlay"
+      ></v-progress-circular>
+    </v-container>
+  </v-container>
 </template>
 
 <script>
-export default{
-    name : 'HomeView',
-    data: () => ({
-      name : '',
-      id : '',
-      repoName: ['Foo', 'Bar', 'Fizz', 'Buzz'],
-      commitId: ['Foo', 'Bar', 'Fizz', 'Buzz'],
-    }),
-}
+import axios from "axios";
+
+export default {
+  name: "HomeView",
+  data: () => ({
+    name: "",
+    id: "",
+    repoName: [],
+    prIds: [],
+    filteredPrIds: [], // New data property for filtered PR IDs
+    code: "",
+    review: "",
+    loading: false,
+  }),
+  mounted() {
+    this.fetchRepoData();
+  },
+  methods: {
+    async fetchRepoData() {
+      this.prIds = [];
+      this.repoName = [];
+      try {
+        const response = await axios.get(
+          "http://localhost:3015/api/v1/reviewrequest"
+        );
+
+        if (Array.isArray(response.data.data)) {
+          this.repoName = response.data.data.map((item) => item.repoName);
+          this.prIds = response.data.data.reduce((acc, item) => {
+            acc[item.repoName] = item.prIds.map((prId) => prId.toString());
+            return acc;
+          }, {});
+        } else {
+          console.error("Expected an array in response.data.data");
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    },
+
+    updatePrIds() {
+    console.log('this.name', this.name)
+    console.log('this.prIds', this.prIds)
+    console.log('this.filteredPrIds', this.filteredPrIds)
+      this.filteredPrIds = this.prIds[this.name] || []; // Filter PR IDs based on selected repo
+      this.id = ""; // Reset PR ID when repo changes
+    },
+
+    async callCodeReviewer() {
+      this.code = "";
+      this.review = "";
+      this.loading = true;
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3015/api/v1/pragya-tripathi123/${this.name}/${this.id}/pulls`
+        );
+        this.code = response.data.data.response;
+        this.review = response.data.data.allReviews;
+        console.log('code', JSON.stringify(this.code, null, 4 ))
+        console.log('review', JSON.stringify(this.review, null, 4))
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+  },
+};
 </script>
 
-<style>
-.header{
-    font-size: 20px;
-    font-weight: bold;
-    background-color: rgb(7, 153, 55);
-    padding: 1rem;
-    text-align: center;
+
+<style scoped>
+.v-application--wrap {
+  min-height: 100vh;
+  background: #f5f5f5;
 }
-.top{
-    padding: 5rem;
-    display: flex;
-    gap:5rem;
-    align-items: center;
+.header {
+  font-size: 24px;
+  font-weight: bold;
+  background-color: rgb(24, 173, 76);
+  padding: 1rem;
+  text-align: center;
+  color: rgb(224, 224, 227);
 }
-.btn{
-    background-color: rgb(7, 153, 55);
-    /* margin: 0.5rem 0rem; */
-    padding: 0.5rem 1rem;
-    border: 1 px solid black;
-    color: rgb(23, 23, 69);
+.code-box,
+.review-box {
+  background-color: #f4f4f4;
+  border-radius: 5px;
+  padding: 1rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: "Courier New", Courier, monospace;
 }
-.bottom{
-    padding: 5rem;
+.scrollable-card {
+  max-height: 300px;
+  overflow-y: auto;
 }
-.code, .review{
-    border: 1px solid black;
-    margin-bottom: 5rem;
-    padding: 0.5rem;
+.loading-overlay {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000; /* Ensure it appears above other content */
+}
+.no-pr-message {
+  color: red;
+  margin-top: 10px;
 }
 </style>
